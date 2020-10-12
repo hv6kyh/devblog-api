@@ -1,0 +1,17 @@
+Resources:
+  StoriesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: menu
+      AttributeDefinitions:
+        - AttributeName: name
+          AttributeType: S
+        - AttributeName: link
+          AttributeType: S
+      KeySchema:
+        - AttributeName: name
+          KeyType: HASH
+      # Set the capacity based on the stage
+      # ProvisionedThroughput:
+      #   ReadCapacityUnits: ${self:custom.tableThroughput}
+      #   WriteCapacityUnits: ${self:custom.tableThroughput}

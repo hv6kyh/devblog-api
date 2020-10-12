@@ -1,0 +1,84 @@
+custom:
+  # opt는 명령줄에서 받아오는 값임
+  # opt에서 받아오는 값이 있으면 그걸 사용하고
+  # 없다면 provider 블록의 값으로 대체함
+  stage: ${opt:stage, self:provider.stage}
+  # 테이블의 이름은 환경에 따라 다름
+  # 예) stage=dev라면 테이블의 이름은 dev-stories임
+  tableName: ${self:custom.stage}-stories
+  # Set our DynamoDB throughput for prod and all other non-prod stages.
+  # 테이블의 읽기/쓰기 용량을 설정하기 위해 tableThroughputs라는 커스텀 변수를 정의함
+  # 환경에 prod라면 5, 나머지는 1
+  tableThroughputs:
+    prod: 5
+    default: 1
+  tableThroughput: ${self:custom.tableThroughputs.${self:custom.stage}, self:custom.tableThroughputs.default}
+  customDomain:
+    domainName: kimyoungho.ga
+    basePath: ''
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+  # Load our webpack config
+  # webpack:
+  #   webpackConfig: ./webpack.config.js
+  #   includeModules: true
+
+service: hello-serverless
+
+plugins:
+  - serverless-domain-manager
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: ap-northeast-2
+  environment:
+    tableName: ${self:custom.tableName}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "Fn::GetAtt": [ StoriesTable, Arn ]
+
+functions:
+  createStory:
+    handler: api/v1/stories/create.create
+    events:
+      - http:
+          path: stories
+          method: post
+  readStories:
+    handler: api/v1/stories/list.list
+    events:
+      - http:
+          path: stories
+          method: get
+  readStory:
+    handler: api/v1/stories/get.get
+    events:
+      - http:
+          path: stories/{id}
+          method: get
+  updateStory:
+    handler: api/v1/stories/update.update
+    events:
+      - http:
+          path: stories/{id}
+          method: patch
+  deleteStory:
+    handler: api/v1/stories/delete.delete
+    events:
+      - http:
+          path: stories/{id}
+          method: delete
+
+resources:
+  - ${file(resources/dynamodb-table.yml)}

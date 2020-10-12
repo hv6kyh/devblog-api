@@ -1,0 +1,7 @@
+/node_modules/
+/.build/
+/.serverless/
+/_warmup/
+/src/shared/config/
+/.dynamodb/
+.DS_Store
